@@ -1,52 +1,67 @@
-# Plan One
+# Plan One - ระบบจัดการธุรกิจภายในครอบครัว
 
-ระบบบริหารจัดการธุรกิจภายในครอบครัวสำหรับงานจำหน่ายและส่ง หิน ดิน ทราย
+Plan One เป็นระบบจัดการธุรกิจภายในครอบครัวสำหรับงานจำหน่ายและส่ง หิน ดิน ทราย
 
-## Features
+## คุณสมบัติหลัก
 
-- จัดการข้อมูลลูกค้า (Customers)
-- จัดการข้อมูลท่าทราย/ซัพพลายเออร์ (Suppliers)
-- จัดการข้อมูลวัสดุ (Materials)
-- จัดการข้อมูลไซต์งาน (Sites)
-- จัดการข้อมูลการส่งสินค้า (Delivery Orders)
-- จัดการข้อมูลพนักงานและรถบรรทุก
-- รายงานและแดชบอร์ด
+- 🔐 **ระบบยืนยันตัวตน**
+  - เข้าสู่ระบบด้วยอีเมล
+  - สมัครสมาชิกด้วยอีเมล
+  - รีเซ็ตรหัสผ่าน
 
-## Tech Stack
+## การติดตั้ง
 
-- **Frontend**: Next.js, TypeScript, TailwindCSS, React Hook Form + Zod
-- **Backend**: Supabase (PostgreSQL, Authentication, Storage)
-- **Hosting**: Vercel (Frontend), Supabase Cloud (Backend)
+1. คัดลอกไฟล์ `.env.local.example` เป็น `.env.local`
 
-## Getting Started
-
-1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/plan-one.git
-cd plan-one
+cp .env.local.example .env.local
 ```
 
-2. Install dependencies:
+2. แก้ไขไฟล์ `.env.local` และกำหนดค่า Supabase URL และ Anon Key
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+NEXT_PUBLIC_AUTH_REDIRECT_URL=http://localhost:3000/auth/callback
+```
+
+3. ติดตั้ง dependencies
+
 ```bash
 npm install
 ```
 
-3. Create `.env.local` file with your Supabase credentials:
-```bash
-cp .env.local.example .env.local
-# Edit the file with your credentials
-```
+4. รันโปรเจ็ค
 
-4. Run the development server:
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## โครงสร้างโปรเจ็ค
 
-## Development Guidelines
+โปรเจ็คนี้ใช้ Next.js 15 และ Supabase สำหรับการจัดการฐานข้อมูลและการยืนยันตัวตน
 
-- Follow the Git workflow and branch naming conventions as outlined in the documentation
-- Use TypeScript for type safety
-- Use React Hook Form + Zod for form validation
-- Follow the coding standards outlined in the documentation
+### โครงสร้างไฟล์
+
+- `/src/app` - หน้าต่างๆ ของแอปพลิเคชัน
+  - `/(auth)` - หน้าเกี่ยวกับการยืนยันตัวตน (เข้าสู่ระบบ, สมัครสมาชิก, ลืมรหัสผ่าน)
+  - `/(dashboard)` - หน้าสำหรับผู้ใช้ที่เข้าสู่ระบบแล้ว
+- `/src/components` - React Components
+  - `/ui` - UI Components
+- `/src/lib` - Utilities และ Libraries
+  - `/supabase` - Supabase client และ authentication
+
+## การตั้งค่า Supabase
+
+1. สร้างโปรเจ็คใหม่ใน [Supabase](https://supabase.io)
+2. ในหน้า "Authentication" เปิดใช้งาน "Email Sign-In"
+3. คัดลอก URL และ Anon Key จากหน้า "Settings > API" และใส่ในไฟล์ `.env.local`
+
+## เทคโนโลยีที่ใช้
+
+- **Next.js 15** - React Framework
+- **Supabase** - ฐานข้อมูลและ Authentication
+- **Tailwind CSS** - CSS Framework
+- **React Hook Form** - จัดการฟอร์ม
+- **Zod** - ตรวจสอบข้อมูล
+- **Noto Sans Thai** - ฟอนต์ภาษาไทย

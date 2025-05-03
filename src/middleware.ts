@@ -1,0 +1,79 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          // ตั้งค่า cookies อย่างถูกต้อง
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: any) {
+          // ลบ cookies อย่างถูกต้อง
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+            maxAge: 0,
+          });
+        },
+      },
+    }
+  );
+
+  try {
+    // ตรวจสอบว่ามี session หรือไม่
+    const { data: { session } } = await supabase.auth.getSession();
+
+    // เส้นทางที่ต้องการให้ล็อกอินก่อน
+    const protectedRoutes = ['/dashboard', '/profile', '/settings'];
+    // เส้นทางสำหรับผู้ใช้ที่ยังไม่ได้ล็อกอิน
+    const authRoutes = ['/signin', '/signup', '/forgot-password'];
+
+    // ดึง pathname จาก URL
+    const { pathname } = request.nextUrl;
+
+    // ตรวจสอบว่าเป็นหน้าที่ต้องล็อกอินหรือไม่
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+    // ตรวจสอบว่าเป็นหน้า auth หรือไม่
+    const isAuthRoute = authRoutes.some(route => pathname === route);
+
+    // ถ้าเป็นหน้าที่ต้องล็อกอินและไม่มี session ให้ redirect ไปหน้า signin
+    if (isProtectedRoute && !session) {
+      const redirectUrl = new URL('/signin', request.url);
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // ถ้าเป็นหน้า auth และมี session แล้ว ให้ redirect ไปหน้า dashboard
+    if (isAuthRoute && session) {
+      const redirectUrl = new URL('/dashboard', request.url);
+      return NextResponse.redirect(redirectUrl);
+    }
+  } catch (error) {
+    console.error('Middleware error:', error);
+  }
+
+  return response;
+}
+
+// กำหนดให้ middleware ทำงานกับทุก route ยกเว้นไฟล์ static และ API
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
+};

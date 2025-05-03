@@ -1,10 +1,6 @@
-export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold">Plan One</h1>
-      <p className="mt-4 text-xl">
-        ระบบบริหารจัดการธุรกิจภายในครอบครัวสำหรับงานจำหน่ายและส่ง หิน ดิน ทราย
-      </p>
-    </main>
-  );
+import { redirect } from 'next/navigation';
+
+export default function HomePage() {
+  redirect('/signin');
+  return null;
 }
