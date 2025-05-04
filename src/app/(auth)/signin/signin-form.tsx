@@ -6,7 +6,7 @@ import { Input } from '@/components/auth/input';
 import { signInWithEmail, resendVerificationEmail } from '@/lib/supabase/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import { AlertCircle, Lock, Mail, Info, Loader2 } from 'lucide-react';
+import { AlertCircle, Lock, Mail, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef } from 'react';
@@ -37,7 +37,6 @@ export default function SignInForm() {
     register,
     handleSubmit,
     formState: { errors },
-    getValues,
   } = useForm<SignInValues>({
     resolver: zodResolver(SignInSchema),
     defaultValues: {
@@ -53,16 +52,16 @@ export default function SignInForm() {
     try {
       setResendLoading(true);
       setResendError(null);
-      
+
       await resendVerificationEmail(unverifiedEmail);
-      
+
       setResendSuccess(true);
       setResendCountdown(60); // นับถอยหลัง 60 วินาที
-      
+
       if (resendTimerRef.current) {
         clearInterval(resendTimerRef.current);
       }
-      
+
       // ตั้งการนับถอยหลัง
       resendTimerRef.current = setInterval(() => {
         setResendCountdown((prev) => {
@@ -75,9 +74,11 @@ export default function SignInForm() {
           return prev - 1;
         });
       }, 1000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error resending verification email:', error);
-      setResendError(error.message || 'ไม่สามารถส่งอีเมลยืนยันได้ กรุณาลองใหม่ภายหลัง');
+      setResendError(
+        error instanceof Error ? error.message : 'ไม่สามารถส่งอีเมลยืนยันได้ กรุณาลองใหม่ภายหลัง'
+      );
     } finally {
       setResendLoading(false);
     }
@@ -96,20 +97,24 @@ export default function SignInForm() {
 
       router.push('/dashboard');
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sign in error:', error);
-      
+
       // ตรวจสอบว่าเป็น error การยืนยันอีเมลหรือไม่
-      if (error.message && (
-          error.message.includes('Email not confirmed') || 
-          error.message.includes('กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ')
-        )) {
+      if (
+        error instanceof Error &&
+        error.message &&
+        (error.message.includes('Email not confirmed') ||
+          error.message.includes('กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ'))
+      ) {
         setIsEmailUnverified(true);
         setUnverifiedEmail(values.email);
-        setError('บัญชีนี้ยังไม่ได้ยืนยันอีเมล กรุณาตรวจสอบอีเมลของคุณและคลิกลิงก์ยืนยัน หรือคลิกปุ่ม "ส่งอีเมลยืนยันอีกครั้ง" ด้านล่าง');
+        setError(
+          'บัญชีนี้ยังไม่ได้ยืนยันอีเมล กรุณาตรวจสอบอีเมลของคุณและคลิกลิงก์ยืนยัน หรือคลิกปุ่ม "ส่งอีเมลยืนยันอีกครั้ง" ด้านล่าง'
+        );
       } else {
         setError(
-          error.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลอีกครั้ง'
+          error instanceof Error ? error.message : 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลอีกครั้ง'
         );
       }
     } finally {
@@ -118,13 +123,10 @@ export default function SignInForm() {
   };
 
   const footer = (
-    <div className='text-center'>
-      <p className='text-sm text-gray-600'>
+    <div className="text-center">
+      <p className="text-sm text-gray-600">
         ยังไม่มีบัญชี?{' '}
-        <Link
-          href='/signup'
-          className='text-blue-700 font-medium hover:text-blue-800'
-        >
+        <Link href="/signup" className="text-blue-700 font-medium hover:text-blue-800">
           สมัครสมาชิก
         </Link>
       </p>
@@ -132,20 +134,16 @@ export default function SignInForm() {
   );
 
   return (
-    <AuthCard
-      title='เข้าสู่ระบบ'
-      subtitle='Plan One ระบบจัดการการก่อสร้าง'
-      footer={footer}
-    >
+    <AuthCard title="เข้าสู่ระบบ" subtitle="Plan One ระบบจัดการการก่อสร้าง" footer={footer}>
       {error && (
         <motion.div
-          className='mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg'
+          className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className='flex items-start'>
-            <AlertCircle className='h-5 w-5 mr-2 mt-0.5 flex-shrink-0' />
-            <span className='text-sm'>{error}</span>
+          <div className="flex items-start">
+            <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <span className="text-sm">{error}</span>
           </div>
         </motion.div>
       )}
@@ -155,7 +153,8 @@ export default function SignInForm() {
           {resendSuccess && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
               <p className="text-sm">
-                ส่งอีเมลยืนยันอีกครั้งเรียบร้อยแล้ว โปรดตรวจสอบกล่องจดหมายของคุณ (รวมถึงโฟลเดอร์สแปม)
+                ส่งอีเมลยืนยันอีกครั้งเรียบร้อยแล้ว โปรดตรวจสอบกล่องจดหมายของคุณ
+                (รวมถึงโฟลเดอร์สแปม)
               </p>
             </div>
           )}
@@ -190,55 +189,48 @@ export default function SignInForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
-          label='อีเมล'
-          type='email'
-          placeholder='name@company.com'
+          label="อีเมล"
+          type="email"
+          placeholder="name@company.com"
           icon={<Mail size={18} />}
           error={errors.email?.message}
           {...register('email')}
         />
 
         <Input
-          label='รหัสผ่าน'
-          type='password'
-          placeholder='รหัสผ่าน'
+          label="รหัสผ่าน"
+          type="password"
+          placeholder="รหัสผ่าน"
           icon={<Lock size={18} />}
           error={errors.password?.message}
           showPasswordToggle
           {...register('password')}
         />
 
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center'>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
             <input
-              id='remember'
-              type='checkbox'
-              className='h-4 w-4 text-blue-700 border-gray-300 rounded focus:ring-blue-700'
+              id="remember"
+              type="checkbox"
+              className="h-4 w-4 text-blue-700 border-gray-300 rounded focus:ring-blue-700"
               {...register('remember')}
             />
-            <label
-              htmlFor='remember'
-              className='ml-2 block text-sm text-gray-700'
-            >
+            <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
               จดจำฉัน
             </label>
           </div>
 
           <Link
-            href='/forgot-password'
-            className='text-sm text-blue-700 hover:text-blue-800 font-medium'
+            href="/forgot-password"
+            className="text-sm text-blue-700 hover:text-blue-800 font-medium"
           >
             ลืมรหัสผ่าน?
           </Link>
         </div>
 
-        <Button
-          type='submit'
-          isLoading={isLoading}
-          className='w-full py-3 mt-4'
-        >
+        <Button type="submit" isLoading={isLoading} className="w-full py-3 mt-4">
           เข้าสู่ระบบ
         </Button>
       </form>

@@ -39,10 +39,12 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               <h1 className="text-2xl font-bold">แดชบอร์ด</h1>
               <p className="text-gray-600">ยินดีต้อนรับกลับมา {user.email}</p>
             </div>
-            <Button onClick={handleSignOut} variant="outline">ออกจากระบบ</Button>
+            <Button onClick={handleSignOut} variant="outline">
+              ออกจากระบบ
+            </Button>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-bold mb-4">คุณได้เข้าสู่ระบบสำเร็จแล้ว</h2>
           <p>นี่เป็นหน้าแดชบอร์ดเบื้องต้น สามารถปรับแต่งเพิ่มเติมได้ตามต้องการ</p>

@@ -1,82 +1,97 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
 import { AuthCard } from '@/components/auth/auth-card';
-import { Input } from '@/components/auth/input';
 import { Button } from '@/components/auth/button';
-import { Lock, Info, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/auth/input';
+import { supabase } from '@/lib/supabase/client';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
+import { AlertCircle, Info, Lock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-const ResetPasswordSchema = z.object({
-  password: z
-    .string()
-    .min(8, 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
-    .regex(/[A-Z]/, 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว')
-    .regex(/[a-z]/, 'รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว')
-    .regex(/[0-9]/, 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว'),
-  confirmPassword: z.string().min(1, 'กรุณายืนยันรหัสผ่าน'),
-})
-.refine((data) => data.password === data.confirmPassword, {
-  message: 'รหัสผ่านไม่ตรงกัน',
-  path: ['confirmPassword'],
-});
+const ResetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
+      .regex(/[A-Z]/, 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว')
+      .regex(/[a-z]/, 'รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว')
+      .regex(/[0-9]/, 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว'),
+    confirmPassword: z.string().min(1, 'กรุณายืนยันรหัสผ่าน'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'รหัสผ่านไม่ตรงกัน',
+    path: ['confirmPassword'],
+  });
 
 type ResetPasswordValues = z.infer<typeof ResetPasswordSchema>;
 
 // ฟังก์ชันคำนวณความแข็งแกร่งของรหัสผ่าน
 const calculatePasswordStrength = (password: string): number => {
   let strength = 0;
-  
+
   // ไม่มีรหัสผ่าน = 0
   if (password.length === 0) return 0;
-  
+
   // ความยาวมากกว่า 8 = +1
   if (password.length >= 8) strength += 1;
-  
+
   // ความยาวมากกว่า 12 = +1
   if (password.length >= 12) strength += 1;
-  
+
   // มีตัวพิมพ์เล็ก = +1
   if (/[a-z]/.test(password)) strength += 1;
-  
+
   // มีตัวพิมพ์ใหญ่ = +1
   if (/[A-Z]/.test(password)) strength += 1;
-  
+
   // มีตัวเลข = +1
   if (/[0-9]/.test(password)) strength += 1;
-  
+
   // มีอักขระพิเศษ = +1
   if (/[^a-zA-Z0-9]/.test(password)) strength += 1;
-  
+
   return Math.min(strength, 5); // คะแนนสูงสุด 5
 };
 
 const getStrengthColor = (strength: number): string => {
   switch (strength) {
-    case 0: return 'bg-gray-200'; // ไม่มีรหัสผ่าน
-    case 1: return 'bg-red-500';  // ต่ำมาก
-    case 2: return 'bg-orange-500'; // ต่ำ
-    case 3: return 'bg-yellow-500'; // ปานกลาง
-    case 4: return 'bg-lime-500';  // สูง
-    case 5: return 'bg-green-500'; // สูงมาก
-    default: return 'bg-gray-200';
+    case 0:
+      return 'bg-gray-200'; // ไม่มีรหัสผ่าน
+    case 1:
+      return 'bg-red-500'; // ต่ำมาก
+    case 2:
+      return 'bg-orange-500'; // ต่ำ
+    case 3:
+      return 'bg-yellow-500'; // ปานกลาง
+    case 4:
+      return 'bg-lime-500'; // สูง
+    case 5:
+      return 'bg-green-500'; // สูงมาก
+    default:
+      return 'bg-gray-200';
   }
 };
 
 const getStrengthLabel = (strength: number): string => {
   switch (strength) {
-    case 0: return '';
-    case 1: return 'รหัสผ่านอ่อนแอมาก';
-    case 2: return 'รหัสผ่านอ่อนแอ';
-    case 3: return 'รหัสผ่านปานกลาง';
-    case 4: return 'รหัสผ่านแข็งแรง';
-    case 5: return 'รหัสผ่านแข็งแรงมาก';
-    default: return '';
+    case 0:
+      return '';
+    case 1:
+      return 'รหัสผ่านอ่อนแอมาก';
+    case 2:
+      return 'รหัสผ่านอ่อนแอ';
+    case 3:
+      return 'รหัสผ่านปานกลาง';
+    case 4:
+      return 'รหัสผ่านแข็งแรง';
+    case 5:
+      return 'รหัสผ่านแข็งแรงมาก';
+    default:
+      return '';
   }
 };
 
@@ -85,7 +100,11 @@ export default function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{
+    id?: string;
+    email?: string;
+    token?: string;
+  } | null>(null);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [password, setPassword] = useState('');
 
@@ -104,7 +123,9 @@ export default function ResetPasswordForm() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         router.push('/signin');
       } else {
@@ -119,7 +140,7 @@ export default function ResetPasswordForm() {
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === 'password' || name === undefined) {
-        const newPassword = value.password as string || '';
+        const newPassword = (value.password as string) || '';
         setPassword(newPassword);
         setPasswordStrength(calculatePasswordStrength(newPassword));
       }
@@ -131,7 +152,7 @@ export default function ResetPasswordForm() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const { error } = await supabase.auth.updateUser({
         password: values.password,
       });
@@ -139,11 +160,13 @@ export default function ResetPasswordForm() {
       if (error) {
         throw error;
       }
-      
+
       setSuccess(true);
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('Reset password error:', error);
-      setError(error.message || 'ไม่สามารถเปลี่ยนรหัสผ่านได้ กรุณาลองใหม่อีกครั้ง');
+      setError(
+        error instanceof Error ? error.message : 'ไม่สามารถเปลี่ยนรหัสผ่านได้ กรุณาลองใหม่อีกครั้ง'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -153,26 +176,36 @@ export default function ResetPasswordForm() {
     return (
       <AuthCard title="เปลี่ยนรหัสผ่านสำเร็จ">
         <div className="text-center">
-          <motion.div 
+          <motion.div
             className="flex justify-center mb-8"
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 260, 
+            transition={{
+              type: 'spring',
+              stiffness: 260,
               damping: 20,
-              delay: 0.2 
+              delay: 0.2,
             }}
           >
             <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-green-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
             </div>
           </motion.div>
 
-          <motion.p 
+          <motion.p
             className="text-gray-600 mb-8 text-lg"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -181,10 +214,7 @@ export default function ResetPasswordForm() {
             รหัสผ่านของคุณได้รับการเปลี่ยนแปลงเรียบร้อยแล้ว
           </motion.p>
 
-          <Button 
-            onClick={() => router.push('/dashboard')}
-            className="w-full text-lg"
-          >
+          <Button onClick={() => router.push('/dashboard')} className="w-full text-lg">
             ไปยังหน้าแดชบอร์ด
           </Button>
         </div>
@@ -205,7 +235,7 @@ export default function ResetPasswordForm() {
   return (
     <AuthCard title="ตั้งรหัสผ่านใหม่" subtitle="กรุณากำหนดรหัสผ่านใหม่ของคุณ">
       {error && (
-        <motion.div 
+        <motion.div
           className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -216,7 +246,7 @@ export default function ResetPasswordForm() {
           </div>
         </motion.div>
       )}
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
           label="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)"
@@ -227,14 +257,14 @@ export default function ResetPasswordForm() {
           showPasswordToggle
           {...register('password')}
         />
-        
+
         {/* แถบวัดความแข็งแกร่งของรหัสผ่าน */}
         {password && (
           <div className="mb-2">
             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <motion.div 
+              <motion.div
                 className={`h-full ${getStrengthColor(passwordStrength)}`}
-                initial={{ width: "0%" }}
+                initial={{ width: '0%' }}
                 animate={{ width: `${(passwordStrength / 5) * 100}%` }}
                 transition={{ duration: 0.5 }}
               />
@@ -246,7 +276,7 @@ export default function ResetPasswordForm() {
             )}
           </div>
         )}
-        
+
         <Input
           label="ยืนยันรหัสผ่านใหม่"
           type="password"
@@ -265,17 +295,13 @@ export default function ResetPasswordForm() {
           className="prevent-paste"
           {...register('confirmPassword')}
         />
-        
+
         <div className="flex items-center gap-2 bg-blue-50 p-3 rounded-md text-sm text-blue-800 mt-3">
           <Info size={16} />
           <p>เพื่อความปลอดภัย กรุณาตั้งรหัสผ่านที่มีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก และตัวเลข</p>
         </div>
 
-        <Button
-          type="submit"
-          isLoading={isLoading}
-          className="w-full py-3 mt-6"
-        >
+        <Button type="submit" isLoading={isLoading} className="w-full py-3 mt-6">
           ตั้งรหัสผ่านใหม่
         </Button>
       </form>

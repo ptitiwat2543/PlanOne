@@ -20,12 +20,12 @@ export const checkEmailExists = async (email: string): Promise<boolean> => {
   try {
     // ใช้ SQL Function ที่เราสร้างไว้เพื่อตรวจสอบอีเมล
     const { data, error } = await supabase.rpc('check_email_exists', { email_to_check: email });
-    
+
     if (error) {
       console.error('Error checking email:', error);
       return false;
     }
-    
+
     return !!data;
   } catch (error) {
     console.error('Error checking email existence:', error);
@@ -76,7 +76,7 @@ export const signUpWithEmail = async ({ email, password }: SignUpCredentials) =>
 
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut();
-  
+
   if (error) {
     throw error;
   }
@@ -107,13 +107,13 @@ export const resendVerificationEmail = async (email: string): Promise<boolean> =
     email: email,
     options: {
       emailRedirectTo: `${window.location.origin}/auth/token`,
-    }
+    },
   });
 
   if (error) {
     throw error;
   }
-  
+
   return true;
 };
 
@@ -124,11 +124,11 @@ export const resendVerificationEmail = async (email: string): Promise<boolean> =
 export const isEmailVerified = async (): Promise<boolean> => {
   try {
     const user = await getUser();
-    
+
     if (!user) {
       return false;
     }
-    
+
     // ตรวจสอบสถานะการยืนยันอีเมล
     return !!user.email_confirmed_at;
   } catch (error) {
@@ -138,8 +138,11 @@ export const isEmailVerified = async (): Promise<boolean> => {
 };
 
 export const getUser = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
   if (error) {
     throw error;
   }
@@ -148,8 +151,11 @@ export const getUser = async () => {
 };
 
 export const getSession = async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
   if (error) {
     throw error;
   }

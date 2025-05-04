@@ -13,72 +13,87 @@ import { Input } from '@/components/auth/input';
 import { Button } from '@/components/auth/button';
 import Link from 'next/link';
 import { debounce } from 'lodash';
-const SignUpSchema = z.object({
-  email: z.string().email('กรุณากรอกอีเมลที่ถูกต้อง'),
-  password: z
-    .string()
-    .min(8, 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
-    .regex(/[A-Z]/, 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว')
-    .regex(/[a-z]/, 'รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว')
-    .regex(/[0-9]/, 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว'),
-  confirmPassword: z.string().min(1, 'กรุณายืนยันรหัสผ่าน'),
-})
-.refine((data) => data.password === data.confirmPassword, {
-  message: 'รหัสผ่านไม่ตรงกัน',
-  path: ['confirmPassword'],
-});
+const SignUpSchema = z
+  .object({
+    email: z.string().email('กรุณากรอกอีเมลที่ถูกต้อง'),
+    password: z
+      .string()
+      .min(8, 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
+      .regex(/[A-Z]/, 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว')
+      .regex(/[a-z]/, 'รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว')
+      .regex(/[0-9]/, 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว'),
+    confirmPassword: z.string().min(1, 'กรุณายืนยันรหัสผ่าน'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'รหัสผ่านไม่ตรงกัน',
+    path: ['confirmPassword'],
+  });
 
 type SignUpValues = z.infer<typeof SignUpSchema>;
 
 // ฟังก์ชันคำนวณความแข็งแกร่งของรหัสผ่าน
 const calculatePasswordStrength = (password: string): number => {
   let strength = 0;
-  
+
   // ไม่มีรหัสผ่าน = 0
   if (password.length === 0) return 0;
-  
+
   // ความยาวมากกว่า 8 = +1
   if (password.length >= 8) strength += 1;
-  
+
   // ความยาวมากกว่า 12 = +1
   if (password.length >= 12) strength += 1;
-  
+
   // มีตัวพิมพ์เล็ก = +1
   if (/[a-z]/.test(password)) strength += 1;
-  
+
   // มีตัวพิมพ์ใหญ่ = +1
   if (/[A-Z]/.test(password)) strength += 1;
-  
+
   // มีตัวเลข = +1
   if (/[0-9]/.test(password)) strength += 1;
-  
+
   // มีอักขระพิเศษ = +1
   if (/[^a-zA-Z0-9]/.test(password)) strength += 1;
-  
+
   return Math.min(strength, 5); // คะแนนสูงสุด 5
 };
 
 const getStrengthColor = (strength: number): string => {
   switch (strength) {
-    case 0: return 'bg-gray-200'; // ไม่มีรหัสผ่าน
-    case 1: return 'bg-red-500';  // ต่ำมาก
-    case 2: return 'bg-orange-500'; // ต่ำ
-    case 3: return 'bg-yellow-500'; // ปานกลาง
-    case 4: return 'bg-lime-500';  // สูง
-    case 5: return 'bg-green-500'; // สูงมาก
-    default: return 'bg-gray-200';
+    case 0:
+      return 'bg-gray-200'; // ไม่มีรหัสผ่าน
+    case 1:
+      return 'bg-red-500'; // ต่ำมาก
+    case 2:
+      return 'bg-orange-500'; // ต่ำ
+    case 3:
+      return 'bg-yellow-500'; // ปานกลาง
+    case 4:
+      return 'bg-lime-500'; // สูง
+    case 5:
+      return 'bg-green-500'; // สูงมาก
+    default:
+      return 'bg-gray-200';
   }
 };
 
 const getStrengthLabel = (strength: number): string => {
   switch (strength) {
-    case 0: return '';
-    case 1: return 'รหัสผ่านอ่อนแอมาก';
-    case 2: return 'รหัสผ่านอ่อนแอ';
-    case 3: return 'รหัสผ่านปานกลาง';
-    case 4: return 'รหัสผ่านแข็งแรง';
-    case 5: return 'รหัสผ่านแข็งแรงมาก';
-    default: return '';
+    case 0:
+      return '';
+    case 1:
+      return 'รหัสผ่านอ่อนแอมาก';
+    case 2:
+      return 'รหัสผ่านอ่อนแอ';
+    case 3:
+      return 'รหัสผ่านปานกลาง';
+    case 4:
+      return 'รหัสผ่านแข็งแรง';
+    case 5:
+      return 'รหัสผ่านแข็งแรงมาก';
+    default:
+      return '';
   }
 };
 
@@ -92,7 +107,7 @@ export default function SignUpForm() {
   const [emailExists, setEmailExists] = useState<boolean | null>(null);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string>('');
-  
+
   // สำหรับการส่งอีเมลยืนยันอีกครั้ง
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
@@ -105,7 +120,7 @@ export default function SignUpForm() {
     handleSubmit,
     formState: { errors },
     watch,
-    getValues
+    getValues,
   } = useForm<SignUpValues>({
     resolver: zodResolver(SignUpSchema),
     defaultValues: {
@@ -124,7 +139,7 @@ export default function SignUpForm() {
           setEmailExists(null);
           return;
         }
-        
+
         setIsCheckingEmail(true);
         const exists = await checkEmailExists(email);
         setEmailExists(exists);
@@ -141,17 +156,17 @@ export default function SignUpForm() {
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === 'password' || name === undefined) {
-        const newPassword = value.password as string || '';
+        const newPassword = (value.password as string) || '';
         setPassword(newPassword);
         setPasswordStrength(calculatePasswordStrength(newPassword));
       }
 
       if (name === 'email' || name === undefined) {
-        const email = value.email as string || '';
+        const email = (value.email as string) || '';
         debouncedCheckEmail(email);
       }
     });
-    
+
     return () => {
       subscription.unsubscribe();
       debouncedCheckEmail.cancel();
@@ -166,17 +181,17 @@ export default function SignUpForm() {
     try {
       setResendLoading(true);
       setResendError(null);
-      
+
       await resendVerificationEmail(registeredEmail);
-      
+
       setResendSuccess(true);
       // ตั้ง countdown เพื่อป้องกันการส่งซ้ำบ่อยเกินไป
       setResendCountdown(60);
-      
+
       if (resendTimerRef.current) {
         clearInterval(resendTimerRef.current);
       }
-      
+
       resendTimerRef.current = setInterval(() => {
         setResendCountdown((prev) => {
           if (prev <= 1) {
@@ -188,10 +203,13 @@ export default function SignUpForm() {
           return prev - 1;
         });
       }, 1000);
-      
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('Resend verification email error:', error);
-      setResendError(error.message || 'ไม่สามารถส่งอีเมลยืนยันได้ กรุณาลองอีกครั้งในภายหลัง');
+      setResendError(
+        error instanceof Error
+          ? error.message
+          : 'ไม่สามารถส่งอีเมลยืนยันได้ กรุณาลองอีกครั้งในภายหลัง'
+      );
     } finally {
       setResendLoading(false);
     }
@@ -201,32 +219,34 @@ export default function SignUpForm() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // ตรวจสอบอีเมลซ้ำอีกครั้งก่อนสมัคร
       const exists = await checkEmailExists(values.email);
       if (exists) {
         setError('อีเมลนี้มีการใช้งานในระบบแล้ว กรุณาใช้อีเมลอื่น');
         return;
       }
-      
+
       const { user } = await signUpWithEmail({
         email: values.email,
         password: values.password,
         confirmPassword: values.confirmPassword,
       });
-      
+
       // เก็บอีเมลไว้สำหรับการส่งอีเมลยืนยันอีกครั้ง
       setRegisteredEmail(values.email);
-      
+
       if (user) {
         setSuccess(true);
       } else {
         // สมัครสมาชิกต้องยืนยันอีเมล
         setSuccess(true);
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('Sign up error:', error);
-      setError(error.message || 'สมัครสมาชิกไม่สำเร็จ กรุณาตรวจสอบข้อมูลอีกครั้ง');
+      setError(
+        error instanceof Error ? error.message : 'สมัครสมาชิกไม่สำเร็จ กรุณาตรวจสอบข้อมูลอีกครั้ง'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -247,19 +267,29 @@ export default function SignUpForm() {
     return (
       <AuthCard title="สมัครสมาชิกสำเร็จ">
         <div className="text-center">
-          <motion.div 
+          <motion.div
             className="flex justify-center mb-8"
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 260, 
+            transition={{
+              type: 'spring',
+              stiffness: 260,
               damping: 20,
-              delay: 0.2 
+              delay: 0.2,
             }}
           >
             <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-green-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
@@ -275,15 +305,16 @@ export default function SignUpForm() {
             กรุณายืนยันอีเมลเพื่อเริ่มใช้งาน
           </motion.h3>
 
-          <motion.p 
+          <motion.p
             className="text-gray-600 mb-6 text-lg"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            เราได้ส่งอีเมลยืนยันไปที่ <strong>{registeredEmail}</strong> โปรดตรวจสอบกล่องจดหมายของคุณและคลิกที่ลิงก์ยืนยันเพื่อเริ่มใช้งาน
+            เราได้ส่งอีเมลยืนยันไปที่ <strong>{registeredEmail}</strong>{' '}
+            โปรดตรวจสอบกล่องจดหมายของคุณและคลิกที่ลิงก์ยืนยันเพื่อเริ่มใช้งาน
           </motion.p>
-          
+
           <motion.div
             className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left"
             initial={{ opacity: 0, y: 10 }}
@@ -310,17 +341,19 @@ export default function SignUpForm() {
             {resendSuccess && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 text-green-700 flex items-start">
                 <CheckCircle2 size={18} className="mr-2 mt-0.5 flex-shrink-0" />
-                <p className="text-sm">ส่งอีเมลยืนยันอีกครั้งเรียบร้อยแล้ว กรุณาตรวจสอบกล่องจดหมายของคุณ</p>
+                <p className="text-sm">
+                  ส่งอีเมลยืนยันอีกครั้งเรียบร้อยแล้ว กรุณาตรวจสอบกล่องจดหมายของคุณ
+                </p>
               </div>
             )}
-            
+
             {resendError && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-red-700 flex items-start">
                 <XCircle size={18} className="mr-2 mt-0.5 flex-shrink-0" />
                 <p className="text-sm">{resendError}</p>
               </div>
             )}
-            
+
             <button
               type="button"
               onClick={handleResendEmail}
@@ -344,10 +377,7 @@ export default function SignUpForm() {
             </button>
           </motion.div>
 
-          <Button 
-            onClick={() => router.push('/signin')}
-            className="w-full text-lg"
-          >
+          <Button onClick={() => router.push('/signin')} className="w-full text-lg">
             กลับไปหน้าเข้าสู่ระบบ
           </Button>
         </div>
@@ -356,13 +386,13 @@ export default function SignUpForm() {
   }
 
   return (
-    <AuthCard 
-      title="สมัครสมาชิก" 
+    <AuthCard
+      title="สมัครสมาชิก"
       subtitle="เริ่มใช้งาน Plan One ระบบจัดการการก่อสร้าง"
       footer={footer}
     >
       {error && (
-        <motion.div 
+        <motion.div
           className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -373,7 +403,7 @@ export default function SignUpForm() {
           </div>
         </motion.div>
       )}
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="relative">
           <Input
@@ -384,10 +414,13 @@ export default function SignUpForm() {
             error={errors.email?.message}
             {...register('email')}
           />
-          
+
           {/* แสดงสถานะการตรวจสอบอีเมล */}
           {getValues('email') && !errors.email && (
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400" style={{ top: 'calc(50% - 9px)' }}>
+            <div
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"
+              style={{ top: 'calc(50% - 9px)' }}
+            >
               {isCheckingEmail ? (
                 <Loader2 size={18} className="text-blue-500 animate-spin" />
               ) : emailExists === true ? (
@@ -401,7 +434,7 @@ export default function SignUpForm() {
             </div>
           )}
         </div>
-        
+
         <Input
           label="รหัสผ่าน"
           type="password"
@@ -411,14 +444,14 @@ export default function SignUpForm() {
           showPasswordToggle
           {...register('password')}
         />
-        
+
         {/* แถบวัดความแข็งแกร่งของรหัสผ่าน */}
         {password && (
           <div className="mb-2">
             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <motion.div 
+              <motion.div
                 className={`h-full ${getStrengthColor(passwordStrength)}`}
-                initial={{ width: "0%" }}
+                initial={{ width: '0%' }}
                 animate={{ width: `${(passwordStrength / 5) * 100}%` }}
                 transition={{ duration: 0.5 }}
               />
@@ -430,7 +463,7 @@ export default function SignUpForm() {
             )}
           </div>
         )}
-        
+
         <Input
           label="ยืนยันรหัสผ่าน"
           type="password"
@@ -449,12 +482,12 @@ export default function SignUpForm() {
           className="prevent-paste"
           {...register('confirmPassword')}
         />
-        
+
         <div className="flex items-center text-blue-700 text-xs my-1">
           <Info size={12} className="mr-1.5" />
           <span>เพื่อความปลอดภัย กรุณาพิมพ์รหัสผ่านยืนยันด้วยตนเอง</span>
         </div>
-        
+
         <Button
           type="submit"
           isLoading={isLoading}

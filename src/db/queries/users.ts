@@ -10,7 +10,7 @@ import { generatePasswordHash } from '@/lib/utils/auth';
  */
 export async function getUserByEmail(email: string): Promise<User | undefined> {
   const result = await db.select().from(users).where(eq(users.email, email));
-  return result[0];
+  return result.length > 0 ? result[0] : undefined;
 }
 
 /**
@@ -20,7 +20,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
  */
 export async function getUserByUsername(username: string): Promise<User | undefined> {
   const result = await db.select().from(users).where(eq(users.username, username));
-  return result[0];
+  return result.length > 0 ? result[0] : undefined;
 }
 
 /**
@@ -30,15 +30,18 @@ export async function getUserByUsername(username: string): Promise<User | undefi
  */
 export async function getUserById(id: number): Promise<User | undefined> {
   const result = await db.select().from(users).where(eq(users.id, id));
-  return result[0];
+  return result.length > 0 ? result[0] : undefined;
 }
 
 /**
  * สร้างผู้ใช้งานใหม่
  * @param userData ข้อมูลผู้ใช้งานที่ต้องการสร้าง
  * @returns ข้อมูลผู้ใช้งานที่สร้าง
+ * @throws Error เมื่อไม่สามารถสร้างผู้ใช้งานได้หรือมีข้อมูลซ้ำ
  */
-export async function createUser(userData: Omit<NewUser, 'passwordHash'> & { password: string }): Promise<User> {
+export async function createUser(
+  userData: Omit<NewUser, 'passwordHash'> & { password: string }
+): Promise<User> {
   // ตรวจสอบว่า email หรือ username ซ้ำหรือไม่
   const existingEmail = await getUserByEmail(userData.email);
   if (existingEmail) {
@@ -54,7 +57,7 @@ export async function createUser(userData: Omit<NewUser, 'passwordHash'> & { pas
   const passwordHash = await generatePasswordHash(userData.password);
 
   // สร้างข้อมูลสำหรับบันทึกลงฐานข้อมูล
-  const { password, ...userDataWithoutPassword } = userData;
+  const { password: _password, ...userDataWithoutPassword } = userData;
   const newUserData: NewUser = {
     ...userDataWithoutPassword,
     passwordHash,
@@ -64,7 +67,17 @@ export async function createUser(userData: Omit<NewUser, 'passwordHash'> & { pas
 
   // บันทึกข้อมูลลงฐานข้อมูล
   const result = await db.insert(users).values(newUserData).returning();
-  return result[0];
+  if (result.length === 0) {
+    throw new Error('Failed to create user');
+  }
+
+  // ข้อมูลที่ได้กลับมาจะไม่เป็น undefined เพราะเราตรวจสอบ length > 0 แล้ว
+  const createdUser = result[0];
+  if (!createdUser) {
+    throw new Error('Unexpected error: User created but no data returned');
+  }
+
+  return createdUser;
 }
 
 /**
@@ -74,18 +87,30 @@ export async function createUser(userData: Omit<NewUser, 'passwordHash'> & { pas
  */
 export async function upsertUserProfile(profileData: NewUserProfile) {
   // ตรวจสอบว่ามีโปรไฟล์อยู่แล้วหรือไม่
-  const existingProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, profileData.userId));
+  const existingProfile = await db
+    .select()
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, profileData.userId));
 
   if (existingProfile.length > 0) {
     // ถ้ามีแล้วให้อัปเดต
-    return await db
+    const result = await db
       .update(userProfiles)
       .set({ ...profileData, updatedAt: new Date() })
       .where(eq(userProfiles.userId, profileData.userId))
       .returning();
+
+    if (result.length === 0) {
+      throw new Error('Failed to update user profile');
+    }
+    return result[0];
   } else {
     // ถ้ายังไม่มีให้สร้างใหม่
-    return await db.insert(userProfiles).values(profileData).returning();
+    const result = await db.insert(userProfiles).values(profileData).returning();
+    if (result.length === 0) {
+      throw new Error('Failed to create user profile');
+    }
+    return result[0];
   }
 }
 
@@ -97,17 +122,17 @@ export async function upsertUserProfile(profileData: NewUserProfile) {
  */
 export async function verifyEmail(userId: number, token: string): Promise<boolean> {
   const user = await getUserById(userId);
-  
+
   if (!user || user.verificationToken !== token) {
     return false;
   }
 
   await db
     .update(users)
-    .set({ 
-      isVerified: true, 
-      verificationToken: null, 
-      updatedAt: new Date() 
+    .set({
+      isVerified: true,
+      verificationToken: null,
+      updatedAt: new Date(),
     })
     .where(eq(users.id, userId));
 

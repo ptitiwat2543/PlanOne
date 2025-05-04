@@ -15,11 +15,21 @@ export default function AuthErrorPage() {
         </div>
         <h1 className="text-blue-500 text-2xl font-bold">Plan One</h1>
       </div>
-      
+
       <div className="w-full max-w-md rounded-xl bg-white shadow-md p-8 text-center">
         <div className="flex justify-center mb-4">
           <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-500">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
