@@ -146,7 +146,7 @@ export default function SignUpForm() {
     <div className="text-center">
       <p className="text-sm text-gray-600">
         มีบัญชีอยู่แล้ว?{' '}
-        <Link href="/signin" className="text-blue-600 font-medium hover:text-blue-700">
+        <Link href="/signin" className="text-blue-700 font-medium hover:text-blue-800">
           เข้าสู่ระบบ
         </Link>
       </p>
@@ -273,7 +273,7 @@ export default function SignUpForm() {
           {...register('confirmPassword')}
         />
         
-        <div className="flex items-center text-blue-600 text-xs my-1">
+        <div className="flex items-center text-blue-700 text-xs my-1">
           <Info size={12} className="mr-1.5" />
           <span>เพื่อความปลอดภัย กรุณาพิมพ์รหัสผ่านยืนยันด้วยตนเอง</span>
         </div>

@@ -78,7 +78,7 @@ export default function ForgotPasswordForm() {
           
           <Link 
             href="/signin"
-            className="inline-flex items-center text-blue-600 hover:text-blue-500 font-medium"
+            className="inline-flex items-center text-blue-700 hover:text-blue-800 font-medium"
           >
             <ArrowLeft size={16} className="mr-1" />
             กลับไปหน้าเข้าสู่ระบบ
@@ -131,7 +131,7 @@ export default function ForgotPasswordForm() {
       <div className="mt-6 text-center">
         <Link 
           href="/signin"
-          className="inline-flex items-center text-blue-600 hover:text-blue-500 font-medium"
+          className="inline-flex items-center text-blue-700 hover:text-blue-800 font-medium"
         >
           <ArrowLeft size={16} className="mr-1" />
           กลับไปหน้าเข้าสู่ระบบ
