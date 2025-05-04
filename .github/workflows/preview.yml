@@ -1,0 +1,50 @@
+name: Preview Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Deploy to Preview Environment for every PR
+  deploy-preview:
+    name: Deploy PR to Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Copy preview environment settings
+        run: cp .env.preview .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Preview
+        id: deploy-preview
+        run: |
+          URL=$(vercel deploy --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_TEAM_SCOPE }} --no-wait)
+          echo "preview_url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR with Preview URL
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const previewUrl = '${{ steps.deploy-preview.outputs.preview_url }}';
+            const issue_number = context.issue.number;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: `🚀 Preview deployment is ready! Visit: ${previewUrl}`
+            });

@@ -1,10 +1,16 @@
 {
   "name": "planone",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:local": "next dev --turbopack",
     "build": "next build",
+    "build:preview": "dotenv -e .env.preview -- next build",
+    "build:production": "dotenv -e .env.production -- next build",
     "start": "next start",
+    "start:preview": "dotenv -e .env.preview -- next start",
+    "start:production": "dotenv -e .env.production -- next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
@@ -14,7 +20,9 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "dotenv -e .env.development -- tsx src/db/migrate.ts",
+    "db:migrate:preview": "dotenv -e .env.preview -- tsx src/db/migrate.ts",
+    "db:migrate:production": "dotenv -e .env.production -- tsx src/db/migrate.ts"
   },
   "repository": {
     "type": "git",
@@ -62,6 +70,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
+    "dotenv-cli": "^7.4.1",
     "drizzle-kit": "^0.31.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",

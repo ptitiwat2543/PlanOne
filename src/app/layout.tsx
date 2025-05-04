@@ -1,9 +1,9 @@
-import type { Metadata } from 'next';
-import { Noto_Sans_Thai } from 'next/font/google';
-import './globals.css';
-import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import type { Metadata } from 'next';
+import { Noto_Sans_Thai } from 'next/font/google';
+import Script from 'next/script';
+import './globals.css';
 
 const notoSansThai = Noto_Sans_Thai({
   subsets: ['latin', 'thai'],
@@ -41,5 +41,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
 }

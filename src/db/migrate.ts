@@ -5,6 +5,11 @@ import postgres from 'postgres';
 
 // สำหรับการรันเฉพาะการอัปเดตฐานข้อมูล
 async function main() {
+  // พิมพ์ข้อความแสดงสภาพแวดล้อมที่ใช้
+  console.warn(
+    `🌍 Running database migration (Environment: ${process.env.NEXT_PUBLIC_ENV || 'development'})`
+  );
+
   // ตรวจสอบว่ามีการกำหนดค่า DATABASE_URL หรือไม่
   if (!process.env.DATABASE_URL) {
     console.error('❌ DATABASE_URL environment variable is not set');
