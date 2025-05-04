@@ -1,0 +1,11 @@
+.next
+node_modules
+build
+coverage
+.env
+.env.*
+package-lock.json
+src/app/(dashboard)/dashboard/page.tsx
+src/app/auth/verification-required/page.tsx
+src/db/queries/sessions.ts
+src/lib/supabase/client-server.ts
