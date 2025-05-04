@@ -18,15 +18,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-medium mb-2">
-          {label}
-        </label>
-        
+        <label className="block text-gray-700 text-sm font-medium mb-2">{label}</label>
+
         <div className="relative">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
             {icon}
           </div>
-          
+
           <input
             ref={ref}
             type={inputType}
@@ -35,7 +33,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             } ${className || ''}`}
             {...props}
           />
-          
+
           {showPasswordToggle && (
             <div
               className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-gray-400 hover:text-gray-600"
@@ -45,7 +43,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        
+
         {error && (
           <motion.p
             initial={{ opacity: 0, height: 0 }}

@@ -19,10 +19,10 @@ export const FadeIn: React.FC<FadeInProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ 
-        duration, 
+      transition={{
+        duration,
         delay,
-        ease: "easeOut" 
+        ease: 'easeOut',
       }}
       className={className}
     >
@@ -68,12 +68,12 @@ export const SlideIn: React.FC<SlideInProps> = ({
       initial={{ ...initial, opacity: 0 }}
       animate={{ ...animate, opacity: 1 }}
       exit={{ ...initial, opacity: 0 }}
-      transition={{ 
-        duration, 
+      transition={{
+        duration,
         delay,
-        type: "spring",
+        type: 'spring',
         damping: 20,
-        stiffness: 100
+        stiffness: 100,
       }}
       className={className}
     >
@@ -97,7 +97,7 @@ export const StaggerChildren: React.FC<StaggerChildrenProps> = ({
   duration = 0.5,
   initialDelay = 0,
   className = '',
-  distance = 30
+  distance = 30,
 }) => {
   return (
     <div className={className}>
@@ -111,9 +111,9 @@ export const StaggerChildren: React.FC<StaggerChildrenProps> = ({
             transition={{
               duration,
               delay: initialDelay + i * staggerDelay,
-              type: "spring",
+              type: 'spring',
               damping: 15,
-              stiffness: 200
+              stiffness: 200,
             }}
             className="mb-6" // เพิ่มระยะห่างระหว่างแต่ละ child component
           >
@@ -143,12 +143,12 @@ export const ScaleIn: React.FC<ScaleInProps> = ({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ 
-        duration, 
+      transition={{
+        duration,
         delay,
-        type: "spring",
+        type: 'spring',
         damping: 15,
-        stiffness: 200
+        stiffness: 200,
       }}
       className={className}
     >
@@ -163,18 +163,14 @@ interface BounceInProps {
   className?: string;
 }
 
-export const BounceIn: React.FC<BounceInProps> = ({
-  children,
-  delay = 0,
-  className = '',
-}) => {
+export const BounceIn: React.FC<BounceInProps> = ({ children, delay = 0, className = '' }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.3, y: 50 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.3, y: 50 }}
-      transition={{ 
-        type: "spring",
+      transition={{
+        type: 'spring',
         stiffness: 220,
         damping: 12,
         delay,
@@ -200,20 +196,20 @@ export const FlipIn: React.FC<FlipInProps> = ({
   className = '',
 }) => {
   const rotate = direction === 'x' ? { rotateX: [90, 0] } : { rotateY: [90, 0] };
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, ...rotate, perspective: 1000 }}
       animate={{ opacity: 1, [direction === 'x' ? 'rotateX' : 'rotateY']: 0 }}
       exit={{ opacity: 0, [direction === 'x' ? 'rotateX' : 'rotateY']: 90 }}
-      transition={{ 
-        type: "spring",
+      transition={{
+        type: 'spring',
         stiffness: 100,
         damping: 15,
         delay,
       }}
       className={className}
-      style={{ transformStyle: "preserve-3d" }}
+      style={{ transformStyle: 'preserve-3d' }}
     >
       {children}
     </motion.div>

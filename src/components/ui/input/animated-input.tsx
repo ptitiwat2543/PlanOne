@@ -4,22 +4,22 @@ import { Input, InputProps } from '@/components/ui/input';
 
 // Animation variants for input
 const inputVariants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     y: 15,
-    scale: 0.98
+    scale: 0.98,
   },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     scale: 1,
-    transition: { 
-      type: "spring",
+    transition: {
+      type: 'spring',
       damping: 15,
       stiffness: 300,
-      duration: 0.4
-    }
-  }
+      duration: 0.4,
+    },
+  },
 };
 
 // สร้าง AnimatedInput component ที่รองรับ props ทั้งหมดของ Input
