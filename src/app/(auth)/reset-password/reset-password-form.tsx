@@ -6,9 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { CleanAuthCard } from '@/components/auth/clean-auth-card';
-import { CleanInput } from '@/components/auth/clean-input';
-import { CleanButton } from '@/components/auth/clean-button';
+import { AuthCard } from '@/components/auth/auth-card';
+import { Input } from '@/components/auth/input';
+import { Button } from '@/components/auth/button';
 import { Lock, Info, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -151,7 +151,7 @@ export default function ResetPasswordForm() {
 
   if (success) {
     return (
-      <CleanAuthCard title="เปลี่ยนรหัสผ่านสำเร็จ">
+      <AuthCard title="เปลี่ยนรหัสผ่านสำเร็จ">
         <div className="text-center">
           <motion.div 
             className="flex justify-center mb-8"
@@ -181,29 +181,29 @@ export default function ResetPasswordForm() {
             รหัสผ่านของคุณได้รับการเปลี่ยนแปลงเรียบร้อยแล้ว
           </motion.p>
 
-          <CleanButton 
+          <Button 
             onClick={() => router.push('/dashboard')}
             className="w-full text-lg"
           >
             ไปยังหน้าแดชบอร์ด
-          </CleanButton>
+          </Button>
         </div>
-      </CleanAuthCard>
+      </AuthCard>
     );
   }
 
   if (!user) {
     return (
-      <CleanAuthCard title="ตั้งรหัสผ่านใหม่">
+      <AuthCard title="ตั้งรหัสผ่านใหม่">
         <div className="flex justify-center py-8">
           <div className="w-12 h-12 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
         </div>
-      </CleanAuthCard>
+      </AuthCard>
     );
   }
 
   return (
-    <CleanAuthCard title="ตั้งรหัสผ่านใหม่" subtitle="กรุณากำหนดรหัสผ่านใหม่ของคุณ">
+    <AuthCard title="ตั้งรหัสผ่านใหม่" subtitle="กรุณากำหนดรหัสผ่านใหม่ของคุณ">
       {error && (
         <motion.div 
           className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
@@ -218,7 +218,7 @@ export default function ResetPasswordForm() {
       )}
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <CleanInput
+        <Input
           label="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)"
           type="password"
           placeholder="รหัสผ่านใหม่"
@@ -247,7 +247,7 @@ export default function ResetPasswordForm() {
           </div>
         )}
         
-        <CleanInput
+        <Input
           label="ยืนยันรหัสผ่านใหม่"
           type="password"
           placeholder="ยืนยันรหัสผ่านใหม่"
@@ -271,14 +271,14 @@ export default function ResetPasswordForm() {
           <p>เพื่อความปลอดภัย กรุณาตั้งรหัสผ่านที่มีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก และตัวเลข</p>
         </div>
 
-        <CleanButton
+        <Button
           type="submit"
           isLoading={isLoading}
           className="w-full py-3 mt-6"
         >
           ตั้งรหัสผ่านใหม่
-        </CleanButton>
+        </Button>
       </form>
-    </CleanAuthCard>
+    </AuthCard>
   );
 }

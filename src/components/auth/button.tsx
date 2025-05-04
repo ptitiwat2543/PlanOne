@@ -3,21 +3,21 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-interface CleanButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
   children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'outline';
   icon?: React.ReactNode;
 }
 
-export function CleanButton({
+export function Button({
   isLoading = false,
   children,
   variant = 'primary',
   icon,
   className,
   ...props
-}: CleanButtonProps) {
+}: ButtonProps) {
   const baseClasses = 'rounded-lg py-2.5 px-4 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
   
   const variantClasses = {

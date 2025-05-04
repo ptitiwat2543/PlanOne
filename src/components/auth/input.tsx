@@ -4,14 +4,14 @@ import React, { forwardRef } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-interface CleanInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   icon?: React.ReactNode;
   error?: string;
   showPasswordToggle?: boolean;
 }
 
-export const CleanInput = forwardRef<HTMLInputElement, CleanInputProps>(
+export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, icon, error, showPasswordToggle = false, className, type = 'text', ...props }, ref) => {
     const [showPassword, setShowPassword] = React.useState(false);
     const inputType = showPasswordToggle ? (showPassword ? 'text' : 'password') : type;
@@ -61,4 +61,4 @@ export const CleanInput = forwardRef<HTMLInputElement, CleanInputProps>(
   }
 );
 
-CleanInput.displayName = 'CleanInput';
+Input.displayName = 'Input';

@@ -1,19 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Info, AlertCircle } from 'lucide-react';
-import { signUpWithEmail } from '@/lib/supabase/auth';
+import { Mail, Lock, Info, AlertCircle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { signUpWithEmail, checkEmailExists, resendVerificationEmail } from '@/lib/supabase/auth';
 import { motion } from 'framer-motion';
-import { CleanAuthCard } from '@/components/auth/clean-auth-card';
-import { CleanInput } from '@/components/auth/clean-input';
-import { CleanButton } from '@/components/auth/clean-button';
+import { AuthCard } from '@/components/auth/auth-card';
+import { Input } from '@/components/auth/input';
+import { Button } from '@/components/auth/button';
 import Link from 'next/link';
-import GoogleIcon from '@/components/icons/google';
-
+import { debounce } from 'lodash';
 const SignUpSchema = z.object({
   email: z.string().email('กรุณากรอกอีเมลที่ถูกต้อง'),
   password: z
@@ -90,12 +89,23 @@ export default function SignUpForm() {
   const [success, setSuccess] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [password, setPassword] = useState('');
+  const [emailExists, setEmailExists] = useState<boolean | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string>('');
+  
+  // สำหรับการส่งอีเมลยืนยันอีกครั้ง
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const resendTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [resendCountdown, setResendCountdown] = useState(0);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
+    getValues
   } = useForm<SignUpValues>({
     resolver: zodResolver(SignUpSchema),
     defaultValues: {
@@ -103,7 +113,29 @@ export default function SignUpForm() {
       password: '',
       confirmPassword: '',
     },
+    mode: 'onChange', // เพิ่ม validate ระหว่างการพิมพ์
   });
+
+  // ตรวจสอบอีเมลซ้ำเมื่อกรอกอีเมลเสร็จแล้ว
+  const debouncedCheckEmail = useRef(
+    debounce(async (email: string) => {
+      try {
+        if (!email || !email.includes('@') || errors.email) {
+          setEmailExists(null);
+          return;
+        }
+        
+        setIsCheckingEmail(true);
+        const exists = await checkEmailExists(email);
+        setEmailExists(exists);
+      } catch (error) {
+        console.error('Error checking email:', error);
+        setEmailExists(null);
+      } finally {
+        setIsCheckingEmail(false);
+      }
+    }, 500)
+  ).current;
 
   // อัพเดทความแข็งแกร่งของรหัสผ่านเมื่อรหัสผ่านเปลี่ยน
   useEffect(() => {
@@ -113,20 +145,78 @@ export default function SignUpForm() {
         setPassword(newPassword);
         setPasswordStrength(calculatePasswordStrength(newPassword));
       }
+
+      if (name === 'email' || name === undefined) {
+        const email = value.email as string || '';
+        debouncedCheckEmail(email);
+      }
     });
-    return () => subscription.unsubscribe();
-  }, [watch]);
+    
+    return () => {
+      subscription.unsubscribe();
+      debouncedCheckEmail.cancel();
+      if (resendTimerRef.current) {
+        clearInterval(resendTimerRef.current);
+      }
+    };
+  }, [watch, debouncedCheckEmail]);
+
+  // ส่งอีเมลยืนยันอีกครั้ง
+  const handleResendEmail = async () => {
+    try {
+      setResendLoading(true);
+      setResendError(null);
+      
+      await resendVerificationEmail(registeredEmail);
+      
+      setResendSuccess(true);
+      // ตั้ง countdown เพื่อป้องกันการส่งซ้ำบ่อยเกินไป
+      setResendCountdown(60);
+      
+      if (resendTimerRef.current) {
+        clearInterval(resendTimerRef.current);
+      }
+      
+      resendTimerRef.current = setInterval(() => {
+        setResendCountdown((prev) => {
+          if (prev <= 1) {
+            if (resendTimerRef.current) {
+              clearInterval(resendTimerRef.current);
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error('Resend verification email error:', error);
+      setResendError(error.message || 'ไม่สามารถส่งอีเมลยืนยันได้ กรุณาลองอีกครั้งในภายหลัง');
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const onSubmit = async (values: SignUpValues) => {
     try {
       setIsLoading(true);
       setError(null);
       
+      // ตรวจสอบอีเมลซ้ำอีกครั้งก่อนสมัคร
+      const exists = await checkEmailExists(values.email);
+      if (exists) {
+        setError('อีเมลนี้มีการใช้งานในระบบแล้ว กรุณาใช้อีเมลอื่น');
+        return;
+      }
+      
       const { user } = await signUpWithEmail({
         email: values.email,
         password: values.password,
         confirmPassword: values.confirmPassword,
       });
+      
+      // เก็บอีเมลไว้สำหรับการส่งอีเมลยืนยันอีกครั้ง
+      setRegisteredEmail(values.email);
       
       if (user) {
         setSuccess(true);
@@ -155,7 +245,7 @@ export default function SignUpForm() {
 
   if (success) {
     return (
-      <CleanAuthCard title="สมัครสมาชิกสำเร็จ">
+      <AuthCard title="สมัครสมาชิกสำเร็จ">
         <div className="text-center">
           <motion.div 
             className="flex justify-center mb-8"
@@ -176,28 +266,97 @@ export default function SignUpForm() {
             </div>
           </motion.div>
 
+          <motion.h3
+            className="text-xl font-bold mb-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            กรุณายืนยันอีเมลเพื่อเริ่มใช้งาน
+          </motion.h3>
+
           <motion.p 
-            className="text-gray-600 mb-8 text-lg"
+            className="text-gray-600 mb-6 text-lg"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            กรุณาตรวจสอบอีเมลของคุณเพื่อยืนยันการสมัครสมาชิก
+            เราได้ส่งอีเมลยืนยันไปที่ <strong>{registeredEmail}</strong> โปรดตรวจสอบกล่องจดหมายของคุณและคลิกที่ลิงก์ยืนยันเพื่อเริ่มใช้งาน
           </motion.p>
+          
+          <motion.div
+            className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <h4 className="font-semibold text-blue-800 mb-2 flex items-center">
+              <Info size={18} className="mr-2" /> สิ่งที่ควรทราบ
+            </h4>
+            <ul className="text-blue-700 text-sm space-y-1">
+              <li>• ลิงก์ยืนยันจะมีอายุ 24 ชั่วโมง</li>
+              <li>• หากไม่พบอีเมล โปรดตรวจสอบในโฟลเดอร์จดหมายขยะ</li>
+              <li>• คุณไม่สามารถเข้าสู่ระบบได้จนกว่าจะยืนยันอีเมล</li>
+            </ul>
+          </motion.div>
 
-          <CleanButton 
+          {/* ปุ่มส่งอีเมลยืนยันอีกครั้ง */}
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            {resendSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 text-green-700 flex items-start">
+                <CheckCircle2 size={18} className="mr-2 mt-0.5 flex-shrink-0" />
+                <p className="text-sm">ส่งอีเมลยืนยันอีกครั้งเรียบร้อยแล้ว กรุณาตรวจสอบกล่องจดหมายของคุณ</p>
+              </div>
+            )}
+            
+            {resendError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-red-700 flex items-start">
+                <XCircle size={18} className="mr-2 mt-0.5 flex-shrink-0" />
+                <p className="text-sm">{resendError}</p>
+              </div>
+            )}
+            
+            <button
+              type="button"
+              onClick={handleResendEmail}
+              disabled={resendLoading || resendCountdown > 0}
+              className={`w-full py-2.5 px-4 rounded-md border border-blue-300 text-blue-700 flex items-center justify-center transition-colors ${
+                resendLoading || resendCountdown > 0
+                  ? 'opacity-60 cursor-not-allowed bg-gray-50'
+                  : 'hover:bg-blue-50'
+              }`}
+            >
+              {resendLoading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin mr-2" />
+                  กำลังส่งอีเมลยืนยัน...
+                </>
+              ) : resendCountdown > 0 ? (
+                `ส่งอีเมลอีกครั้งใน ${resendCountdown} วินาที`
+              ) : (
+                'ส่งอีเมลยืนยันอีกครั้ง'
+              )}
+            </button>
+          </motion.div>
+
+          <Button 
             onClick={() => router.push('/signin')}
             className="w-full text-lg"
           >
             กลับไปหน้าเข้าสู่ระบบ
-          </CleanButton>
+          </Button>
         </div>
-      </CleanAuthCard>
+      </AuthCard>
     );
   }
 
   return (
-    <CleanAuthCard 
+    <AuthCard 
       title="สมัครสมาชิก" 
       subtitle="เริ่มใช้งาน Plan One ระบบจัดการการก่อสร้าง"
       footer={footer}
@@ -216,16 +375,34 @@ export default function SignUpForm() {
       )}
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <CleanInput
-          label="อีเมล"
-          type="email"
-          placeholder="name@company.com"
-          icon={<Mail size={18} />}
-          error={errors.email?.message}
-          {...register('email')}
-        />
+        <div className="relative">
+          <Input
+            label="อีเมล"
+            type="email"
+            placeholder="name@company.com"
+            icon={<Mail size={18} />}
+            error={errors.email?.message}
+            {...register('email')}
+          />
+          
+          {/* แสดงสถานะการตรวจสอบอีเมล */}
+          {getValues('email') && !errors.email && (
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400" style={{ top: 'calc(50% - 9px)' }}>
+              {isCheckingEmail ? (
+                <Loader2 size={18} className="text-blue-500 animate-spin" />
+              ) : emailExists === true ? (
+                <div className="flex items-center text-red-500">
+                  <XCircle size={18} className="mr-1" />
+                  <span className="text-xs">มีอีเมลนี้ในระบบแล้ว</span>
+                </div>
+              ) : emailExists === false ? (
+                <CheckCircle2 size={18} className="text-green-500" />
+              ) : null}
+            </div>
+          )}
+        </div>
         
-        <CleanInput
+        <Input
           label="รหัสผ่าน"
           type="password"
           placeholder="รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)"
@@ -254,7 +431,7 @@ export default function SignUpForm() {
           </div>
         )}
         
-        <CleanInput
+        <Input
           label="ยืนยันรหัสผ่าน"
           type="password"
           placeholder="ยืนยันรหัสผ่าน"
@@ -278,32 +455,15 @@ export default function SignUpForm() {
           <span>เพื่อความปลอดภัย กรุณาพิมพ์รหัสผ่านยืนยันด้วยตนเอง</span>
         </div>
         
-        <CleanButton
+        <Button
           type="submit"
           isLoading={isLoading}
           className="w-full py-3 mt-4"
+          disabled={isLoading || emailExists === true}
         >
           สมัครสมาชิกทันที
-        </CleanButton>
-        
-        <div className="relative mt-6 mb-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">หรือสมัครด้วย</span>
-          </div>
-        </div>
-        
-        <CleanButton
-          type="button"
-          variant="outline"
-          className="w-full"
-          icon={<GoogleIcon className="w-4 h-4" />}
-        >
-          สมัครด้วย Google
-        </CleanButton>
+        </Button>
       </form>
-    </CleanAuthCard>
+    </AuthCard>
   );
 }
